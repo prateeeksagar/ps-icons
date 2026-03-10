@@ -21,7 +21,7 @@ export const Hero = () => {
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Button size="lg" asChild>
           <Link href="/icons">
-            Browse Components
+            Browse Icons
             <ArrowRight />
           </Link>
         </Button>
