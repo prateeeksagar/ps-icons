@@ -4,6 +4,7 @@ import "./globals.css"
 import { Navbar } from "@/components/layout/navbar"
 import { Footer } from "@/components/layout/footer"
 import { ThemeProvider } from "@/components/theme-provider"
+import { TooltipProvider } from "@/components/ui/tooltip"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,10 +32,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} flex min-h-screen flex-col antialiased`}
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {" "}
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <TooltipProvider>
+            {" "}
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>
