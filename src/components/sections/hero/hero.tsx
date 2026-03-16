@@ -1,6 +1,9 @@
+"use client"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { CopyButton } from "@/components/copy-button"
+import { toast } from "sonner"
 
 export const Hero = () => {
   return (
@@ -31,9 +34,15 @@ export const Hero = () => {
       </div>
 
       {/* Install snippet */}
-      <div className="border-border bg-muted text-muted-foreground mt-2 flex items-center gap-2 rounded-lg border px-4 py-2.5 font-mono text-sm">
-        <span className="text-primary select-none">$</span>
-        <span>npx shadcn add https://ps-icons.dev/r/arrow-right</span>
+      <div className="border-border bg-muted text-muted-foreground mt-2 flex items-center justify-between gap-4 rounded-lg border px-4 py-2 font-mono text-sm">
+        <div>
+          <span className="text-primary select-none">$</span>
+          <span>npx shadcn add https://ps-icons.dev/r/arrow-right</span>
+        </div>
+        <CopyButton
+          text={"npx shadcn add https://ps-icons.dev/r/arrow-right"}
+          onCopySuccess={() => toast.success("copied to clipboard")}
+        />
       </div>
     </section>
   )

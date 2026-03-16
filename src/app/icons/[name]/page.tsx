@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation"
 import { registry } from "@/registry/registry"
 import { ArrowRightDemo } from "@/registry/icons/arrow-right/demo"
+import { CopyButton } from "@/components/copy-button"
+import { InstallCommand } from "@/components/install-command"
 
 const demos: Record<string, React.ComponentType> = {
   "arrow-right": ArrowRightDemo,
@@ -32,21 +34,14 @@ export default async function IconDetailPage({ params }: IconPageProps) {
       </div>
 
       {/* Live demo */}
-      <div className="mb-8">
-        {Demo ? <Demo /> : null}
-      </div>
+      <div className="mb-8">{Demo ? <Demo /> : null}</div>
 
       {/* Install */}
       <div className="mb-8">
         <h2 className="text-muted-foreground mb-3 text-sm font-semibold tracking-wider uppercase">
           Install
         </h2>
-        <div className="border-border bg-muted flex items-center gap-2 rounded-lg border px-4 py-3 font-mono text-sm">
-          <span className="text-primary select-none">$</span>
-          <span className="text-foreground">
-            npx shadcn add https://ps-icons.dev/r/{icon.name}
-          </span>
-        </div>
+        <InstallCommand name={icon.name} />
       </div>
 
       {/* Props */}
@@ -74,9 +69,17 @@ export default async function IconDetailPage({ params }: IconPageProps) {
                 { prop: "size", type: "number", default: "24" },
                 { prop: "color", type: "string", default: "currentColor" },
                 { prop: "strokeWidth", type: "number", default: "2" },
-                { prop: "variant", type: '"default" | "path" | "path-loop"', default: '"default"' },
+                {
+                  prop: "variant",
+                  type: '"default" | "path" | "path-loop"',
+                  default: '"default"',
+                },
                 { prop: "loop", type: "boolean", default: "false" },
-                { prop: "trigger", type: '"hover" | "click" | "auto"', default: '"hover"' },
+                {
+                  prop: "trigger",
+                  type: '"hover" | "click" | "auto"',
+                  default: '"hover"',
+                },
                 { prop: "reverse", type: "boolean", default: "false" },
                 { prop: "duration", type: "number", default: "0.3" },
                 { prop: "className", type: "string", default: "—" },
