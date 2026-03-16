@@ -1,18 +1,76 @@
 "use client"
+
 import { useEffect, useRef } from "react"
 import { motion, useAnimate } from "motion/react"
 
-export type ArrowRightVariant = "default" | "default-loop" | "path" | "path-loop"
-
+export type ArrowRightVariant = "default" | "path" | "path-reverse"
 export interface ArrowRightIconProps {
   size?: number
   color?: string
   strokeWidth?: number
+  loop?: boolean
   variant?: ArrowRightVariant
   trigger?: "hover" | "click" | "auto"
   reverse?: boolean
   duration?: number
   className?: string
+}
+
+type AnimationOptions = {
+  reverse: boolean
+  duration: number
+}
+
+type AnimationFn = (
+  animate: ReturnType<typeof useAnimate>[1],
+  options: AnimationOptions
+) => Promise<void>
+
+const animations: Record<ArrowRightVariant, AnimationFn> = {
+  default: async (animate, { reverse, duration }) => {
+    const dir = reverse ? -1 : 1
+
+    animate('[data-path="line"]', { x: dir * 2 }, { duration: duration * 0.4 })
+
+    await animate(
+      '[data-path="head"]',
+      { x: dir * 4 },
+      { duration: duration * 0.4 }
+    )
+
+    animate('[data-path="line"]', { x: 0 }, { duration: duration * 0.4 })
+
+    await animate('[data-path="head"]', { x: 0 }, { duration: duration * 0.4 })
+  },
+
+  path: async (animate, { duration }) => {
+    await animate(
+      '[data-path="line"]',
+      { pathLength: [0, 1] },
+      { duration: duration * 0.6, ease: "easeInOut" }
+    )
+
+    await animate(
+      '[data-path="head"]',
+      { pathLength: [0, 1] },
+      { duration: duration * 0.4, ease: "easeInOut" }
+    )
+  },
+
+  "path-reverse": async (animate, { duration }) => {
+    await Promise.all([
+      animate(
+        '[data-path="line"]',
+        { pathLength: [1, 0, 1] },
+        { duration, ease: "easeInOut" }
+      ),
+      animate(
+        '[data-path="head"]',
+        { pathLength: [1, 0, 1] },
+        { duration, delay: duration * 0.3, ease: "easeInOut" }
+      ),
+    ])
+  },
 }
 
 export const ArrowRightIcon = ({
@@ -22,113 +80,69 @@ export const ArrowRightIcon = ({
   variant = "default",
   trigger = "hover",
   reverse = false,
-  duration = 0.3,
+  duration = 0.5,
+  loop = false,
   className,
 }: ArrowRightIconProps) => {
   const [scope, animate] = useAnimate()
   const isAnimating = useRef(false)
 
-  // "default" — head moves further than line (parallax feel)
-  const playDefault = async () => {
-    const dir = reverse ? -1 : 1
-    animate('[data-path="line"]', { x: dir * 3 }, { duration: duration * 0.4, ease: "easeOut" })
-    await animate('[data-path="head"]', { x: dir * 6 }, { duration: duration * 0.4, ease: "easeOut" })
-    animate('[data-path="line"]', { x: 0 }, { duration: duration * 0.6, ease: "easeInOut" })
-    await animate('[data-path="head"]', { x: 0 }, { duration: duration * 0.6, ease: "easeInOut" })
-  }
-
-  // "default-loop" — while loop so isAnimating controls the cycle cleanly
-  const playDefaultLoop = async () => {
-    while (isAnimating.current) {
-      await playDefault()
-    }
-  }
-
-  // "path" — draw the line first, then the arrowhead
-  const playPath = async () => {
-    await animate(
-      '[data-path="line"]',
-      { pathLength: [0, 1] },
-      { duration: duration * 0.6, ease: "easeInOut" }
-    )
-    await animate(
-      '[data-path="head"]',
-      { pathLength: [0, 1] },
-      { duration: duration * 0.4, ease: "easeInOut" }
-    )
-  }
-
-  // "path-loop" — motion handles repeat, store controls for cleanup
-  const loopControls = useRef<Array<{ cancel: () => void }>>([])
-  const playPathLoop = () => {
-    const a1 = animate('[data-path="line"]', { pathLength: [0, 1] }, {
-      duration,
-      ease: "easeInOut",
-      repeat: Infinity,
-      repeatType: "mirror",
-    })
-    const a2 = animate('[data-path="head"]', { pathLength: [0, 1] }, {
-      duration,
-      ease: "easeInOut",
-      delay: duration * 0.3,
-      repeat: Infinity,
-      repeatType: "mirror",
-    })
-    loopControls.current = [a1, a2]
-  }
-
-  const variantMap: Record<ArrowRightVariant, () => void | Promise<void>> = {
-    "default": playDefault,
-    "default-loop": playDefaultLoop,
-    "path": playPath,
-    "path-loop": playPathLoop,
-  }
-
-  const play = () => {
+  const play = async () => {
     if (isAnimating.current) return
     isAnimating.current = true
-    Promise.resolve(variantMap[variant]()).then(() => {
-      isAnimating.current = false
-    })
+
+    if (loop) {
+      while (isAnimating.current) {
+        await animations[variant](animate, { reverse, duration })
+      }
+    } else {
+      await animations[variant](animate, { reverse, duration })
+    }
+
+    isAnimating.current = false
   }
 
-  // Cancel all running animations on unmount
-  useEffect(() => {
-    return () => {
-      isAnimating.current = false
-      loopControls.current.forEach((ctrl) => ctrl.cancel())
-    }
-  }, [])
+  const stop = () => {
+    isAnimating.current = false
+  }
 
   useEffect(() => {
     if (trigger === "auto") play()
   }, [])
 
+  useEffect(() => {
+    return () => {
+      isAnimating.current = false
+    }
+  }, [])
+
+  const triggerProps =
+    trigger === "hover"
+      ? { onMouseEnter: play, onMouseLeave: stop }
+      : trigger === "click"
+        ? { onClick: play }
+        : {}
+
   return (
-    <div
+    <motion.svg
+      ref={scope}
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
       className={className}
       style={{
-        display: "inline-flex",
         cursor: trigger === "click" ? "pointer" : "default",
       }}
-      onMouseEnter={() => trigger === "hover" && play()}
-      onClick={() => trigger === "click" && play()}
+      {...triggerProps}
     >
-      <motion.svg
-        ref={scope}
-        xmlns="http://www.w3.org/2000/svg"
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <motion.path data-path="line" d="M5 12h14" />
-        <motion.path data-path="head" d="m12 5 7 7-7 7" />
-      </motion.svg>
-    </div>
+      <motion.path data-path="line" d="M5 12h14" />
+      <motion.path data-path="head" d="m12 5 7 7-7 7" />
+    </motion.svg>
   )
 }

@@ -35,7 +35,7 @@ export default function IconsPage() {
               <TooltipTrigger asChild>
                 <Link key={icon.name} href={`/icons/${icon.name}`}>
                   <div className="group border-border bg-card hover:bg-muted flex flex-col items-center gap-3 rounded-sm border p-4 transition-colors">
-                    <div className="text-foreground flex h-3 w-3 items-center justify-center">
+                    <div className="text-foreground flex h-full w-full items-center justify-center">
                       {Preview ? <Preview /> : null}
                     </div>
                   </div>
