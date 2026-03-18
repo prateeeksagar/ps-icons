@@ -10,7 +10,9 @@ export interface ArrowRightIconProps {
   strokeWidth?: number
   loop?: boolean
   variant?: ArrowRightVariant
-  trigger?: "hover" | "click" | "auto"
+  animateOnHover?: boolean
+  animateOnClick?: boolean
+  autoPlay?: boolean
   reverse?: boolean
   duration?: number
   className?: string
@@ -78,10 +80,12 @@ export const ArrowRightIcon = ({
   color = "currentColor",
   strokeWidth = 2,
   variant = "default",
-  trigger = "hover",
+  animateOnHover = true,
+  animateOnClick = false,
+  autoPlay = false,
   reverse = false,
-  duration = 0.5,
   loop = false,
+  duration = 0.5,
   className,
 }: ArrowRightIconProps) => {
   const [scope, animate] = useAnimate()
@@ -91,15 +95,17 @@ export const ArrowRightIcon = ({
     if (isAnimating.current) return
     isAnimating.current = true
 
-    if (loop) {
-      while (isAnimating.current) {
+    try {
+      if (loop) {
+        while (isAnimating.current) {
+          await animations[variant](animate, { reverse, duration })
+        }
+      } else {
         await animations[variant](animate, { reverse, duration })
       }
-    } else {
-      await animations[variant](animate, { reverse, duration })
+    } finally {
+      isAnimating.current = false
     }
-
-    isAnimating.current = false
   }
 
   const stop = () => {
@@ -107,8 +113,8 @@ export const ArrowRightIcon = ({
   }
 
   useEffect(() => {
-    if (trigger === "auto") play()
-  }, [])
+    if (autoPlay) play()
+  }, [autoPlay])
 
   useEffect(() => {
     return () => {
@@ -116,12 +122,15 @@ export const ArrowRightIcon = ({
     }
   }, [])
 
-  const triggerProps =
-    trigger === "hover"
-      ? { onMouseEnter: play, onMouseLeave: stop }
-      : trigger === "click"
-        ? { onClick: play }
-        : {}
+  const eventProps = {
+    ...(animateOnHover && {
+      onHoverStart: play,
+      onHoverEnd: stop,
+    }),
+    ...(animateOnClick && {
+      onTap: play,
+    }),
+  }
 
   return (
     <motion.svg
@@ -137,9 +146,9 @@ export const ArrowRightIcon = ({
       strokeLinejoin="round"
       className={className}
       style={{
-        cursor: trigger === "click" ? "pointer" : "default",
+        cursor: animateOnClick ? "pointer" : "default",
       }}
-      {...triggerProps}
+      {...eventProps}
     >
       <motion.path data-path="line" d="M5 12h14" />
       <motion.path data-path="head" d="m12 5 7 7-7 7" />
